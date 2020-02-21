@@ -48,7 +48,8 @@ class GeneticAlgo():
 
     def fillLocations(self, key, icr):
         loc_i = []
-        no_of_loc = random.randint(0, self.max_locations[icr])
+        # no_of_loc = random.randint(0, self.max_locations[icr])
+        no_of_loc = self.max_locations[icr]
         for _ in range(no_of_loc):
             self.getRowCol(loc_i, icr)
         icr_dict = self.getICR(icr)
@@ -130,14 +131,14 @@ class GeneticAlgo():
 
     def getNeighbourPoints(self, key, icr):
         currentTile = self.getICR(icr)
-        pos = currentTile[key]
+        locations = currentTile[key]
         points = 0
 
-        points += self.getXcost(pos, icr)
-        points += self.getScost(pos, icr)
+        points += self.getXcost(locations, icr)
+        points += self.getScost(locations, icr)
 
-        # if icr == 0:
-        #     points += self.getIcost(pos, icr)
+        if icr == 0:
+            points += self.getIcost(locations, key, icr)
         # elif icr == 1:
         #     ponts
         return points
@@ -146,9 +147,7 @@ class GeneticAlgo():
         vicinity_count = 0
         for X in self.locations_x:
             for P in pos:
-                row_dist = X[0] - P[0]
-                col_dist = X[1] - P[1]
-                manh_dist = abs(row_dist) + abs(col_dist)
+                manh_dist = self.getManhDist(X, P)
                 if manh_dist <= 2:
                     vicinity_count += 1
         return vicinity_count
@@ -164,12 +163,35 @@ class GeneticAlgo():
     def getScost(self, pos, icr):
         points = 0
         cost = 10 if icr == 2 else 0
-        X_vicnt = self.countXinVicinity(pos)
-        if X_vicnt > 0:
-            points += X_vicnt * cost
+        S_vicnt = self.countSinVicinity(pos)
+        if S_vicnt > 0:
+            points += S_vicnt * cost
         return points
 
-    # def getIcost(self, pos, icr):
-    #     points = 0
-    #     other_indus = self.getICR(icr)
-    #     for I in other_indus
+    def getIcost(self, pos, key, icr):
+        points = 0
+        if len(pos) == 1:
+            return 0
+
+        for i in range (len(pos)):
+            for j in range (i+1, len(pos)):
+                manh_dist = self.getManhDist(pos[i], pos[j])
+                if manh_dist <= 2:
+                    points += 4     # Each gets two, so doubling
+        return points
+
+    @staticmethod
+    def getManhDist(pos_1, pos_2):
+        row_dist = pos_1[0] - pos_2[0]
+        col_dist = pos_1[1] - pos_2[1]
+        manh_dist = abs(row_dist) + abs(col_dist)
+        return manh_dist
+
+    def countSinVicinity(self, pos):
+        vicinity_count = 0
+        for S in self.locations_s:
+            for P in pos:
+                manh_dist = self.getManhDist(S, P)
+                if manh_dist <= 2:
+                    vicinity_count += 1
+        return vicinity_count
