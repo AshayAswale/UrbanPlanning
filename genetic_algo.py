@@ -12,7 +12,7 @@ class GeneticAlgo():
         self.height = len(urban_map)
         self.width = len(urban_map[0])
 
-        self.cost_key_map = []
+        self.points_key_map = []
         self.key_indus_dict = {}
         self.key_comm_dict = {}
         self.key_resi_dict = {}
@@ -37,14 +37,14 @@ class GeneticAlgo():
     def solve(self):
         self.getXS()
         self.overwriteSceneLocation()
-        for _ in range(len(self.cost_key_map), self.max_population):
+        for _ in range(len(self.points_key_map), self.max_population):
             unique_id = uuid.uuid4().hex[:8]
             for i in range(3):
                 self.fillLocations(unique_id, i)
-            cost = self.getCostMap(unique_id)
+            points = self.getPointsMap(unique_id)
             self.locations_s = deepcopy(self.locations_s_master)
             self.printCity(unique_id)
-            print("total cost: ", self.cost_key_map)
+            print("total Points: ", self.points_key_map)
 
     def fillLocations(self, key, icr):
         loc_i = []
@@ -71,17 +71,18 @@ class GeneticAlgo():
                     return
         elif (np.all(self.locations_s == [row, col], 1)).any():
             for i in range(len(self.locations_s)):
+                # Kuch to panga hai
                 if self.locations_s[i][0] == row and self.locations_s[i][1] == col:
                     self.locations_s = np.delete(self.locations_s, i, 0)
         loc_i.append([row, col])
 
-    def getCostMap(self, key):
-        cost = 0
+    def getPointsMap(self, key):
+        points = 0
         for i in range(3):
-            cost += self.getBuildCost(key, i)
-
-        self.cost_key_map.append([cost, key])
-        return cost
+            points -= self.getBuildCost(key, i)
+            points += self.getNeighbourPoints(key, i)
+        self.points_key_map.append([points, key])
+        return points
 
     def getBuildCost(self, key, icr):
         a = self.getICR(icr)
@@ -124,5 +125,51 @@ class GeneticAlgo():
         for resi in self.key_resi_dict[key]:
             print_copy[resi[0], resi[1]] = 'R'
 
-        # print(print_copy)
+        print(print_copy)
         # print("\n\n")
+
+    def getNeighbourPoints(self, key, icr):
+        currentTile = self.getICR(icr)
+        pos = currentTile[key]
+        points = 0
+
+        points += self.getXcost(pos, icr)
+        points += self.getScost(pos, icr)
+
+        # if icr == 0:
+        #     points += self.getIcost(pos, icr)
+        # elif icr == 1:
+        #     ponts
+        return points
+
+    def countXinVicinity(self, pos):
+        vicinity_count = 0
+        for X in self.locations_x:
+            for P in pos:
+                row_dist = X[0] - P[0]
+                col_dist = X[1] - P[1]
+                manh_dist = abs(row_dist) + abs(col_dist)
+                if manh_dist <= 2:
+                    vicinity_count += 1
+        return vicinity_count
+
+    def getXcost(self, pos, icr):
+        points = 0
+        cost = -10 if icr == 0 else -20
+        X_vicnt = self.countXinVicinity(pos)
+        if X_vicnt > 0:
+            points += X_vicnt * cost
+        return points
+
+    def getScost(self, pos, icr):
+        points = 0
+        cost = 10 if icr == 2 else 0
+        X_vicnt = self.countXinVicinity(pos)
+        if X_vicnt > 0:
+            points += X_vicnt * cost
+        return points
+
+    # def getIcost(self, pos, icr):
+    #     points = 0
+    #     other_indus = self.getICR(icr)
+    #     for I in other_indus
