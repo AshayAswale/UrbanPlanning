@@ -21,7 +21,7 @@ class GeneticAlgo():
         self.locations_s = []
         self.locations_s_master = []
 
-        self.max_population = 10
+        self.max_population = 2
         self.elitism_percent = 10
         self.culling_percent = 10
         self.mutation_percent = 10
@@ -40,26 +40,31 @@ class GeneticAlgo():
         self.overwriteSceneLocation()
         self.pupulate()
         print("Sorted Points: ", self.points_key_map)
-        # self.crossover(self.points_key_map[0][1], self.points_key_map[1][1])
+        self.crossover(self.points_key_map[0][1], self.points_key_map[1][1])
         # self.printCity(self.points_key_map[0][1])
         # self.printCity(self.points_key_map[1][1])
         # print("Sorted Points: ", self.points_key_map)
 
     def pupulate(self):
         for _ in range(len(self.points_key_map), self.max_population):
+            count = 0
             unique_id = uuid.uuid4().hex[:8]
             for i in range(3):
                 self.fillLocations(unique_id, i)
+                count += len(self.getICR(i)[unique_id])
+            if count == 0:
+                loc_i = []
+                self.getRowCol(loc_i, unique_id, random.randint(0, 2))
             points = self.getPointsMap(unique_id)
             self.points_key_map.append([points, unique_id])
-            self.locations_s = deepcopy(self.locations_s_master)
-            # self.printCity(unique_id)
+            # self.locations_s = deepcopy(self.locations_s_master)
+            self.printCity(unique_id)
         self.points_key_map.sort(reverse=True)
 
     def fillLocations(self, key, icr):
         loc_i = []
         no_of_loc = random.randint(0, self.max_locations[icr])
-        # no_of_loc = self.max_locations[icr]
+        no_of_loc = self.max_locations[icr]
         for _ in range(no_of_loc):
             self.getRowCol(loc_i, key, icr)
             # self.getMyRowCol(loc_i, icr)
@@ -80,17 +85,20 @@ class GeneticAlgo():
         if (np.all(self.locations_x == [row, col], 1)).any():
             self.getRowCol(loc_i, key, icr)
             return
+        if (np.all(self.locations_s == [row, col], 1)).any():
+            self.getRowCol(loc_i, key, icr)
+            return
         elif len(loc_i) != 0:
             for prev_loc in loc_i:
                 if prev_loc[0] == row and prev_loc[1] == col:
                     self.getRowCol(loc_i, key, icr)
                     return
-        elif (np.all(self.locations_s == [row, col], 1)).any():
-            for i in range(len(self.locations_s)):
-                # Kuch to panga hai
-                if self.locations_s[i][0] == row and self.locations_s[i][1] == col:
-                    self.locations_s = np.delete(self.locations_s, i, 0)
-                    break
+        # elif (np.all(self.locations_s == [row, col], 1)).any():
+        #     for i in range(len(self.locations_s)):
+        #         # Kuch to panga hai
+        #         if self.locations_s[i][0] == row and self.locations_s[i][1] == col:
+        #             self.locations_s = np.delete(self.locations_s, i, 0)
+        #             break
         loc_i.append([row, col])
 
     def getMyRowCol(self, loc_i, icr):
@@ -256,5 +264,59 @@ class GeneticAlgo():
                     vicinity_count += 1
         return vicinity_count
 
-    # def crossover(self, key_1, key_2, new=False):
-        # SWAP ROWS... N0T INDIVIDUAL ELEMENTS
+    def crossover(self, key_1, key_2, new=False):
+        list_1 = []
+        list_2 = []
+        # count_1 = 0
+        # count_2 = 0
+        for i in range(3):
+            list_1.append(self.getICR(i)[key_1])
+            list_2.append(self.getICR(i)[key_2])
+        #     count_1 += len(self.getICR(i)[key_1])
+        #     count_2 += len(self.getICR(i)[key_2])
+        # min_ct = int(min(count_1, count_2) / 2)
+        # min_ct = min_ct if min_ct > 0 else 1
+
+        child_key_1 = uuid.uuid4().hex[:8]
+        child_key_2 = uuid.uuid4().hex[:8]
+
+        # for _ in range(min_ct):
+        rand = random.randint(0, 2)
+
+        # al = range(3)
+        # al.pop(rand)
+        # poppop_1 = []
+        # poppop_2 = []
+        # for coming in list_2[rand]:
+        #     for icr_s in al:
+        #         for basic in range(len(list_1[icr_s])):
+        #             # list_1[icr_s].pop(basic)
+        #             poppop_1.append([icr_s, basic])
+        #             print("#######################")
+
+        # for delt in poppop_1:
+        #     list_1[delt[0]].pop(delt[1])
+
+        # for coming in list_1[rand]:
+        #     for icr_s in al:
+        #         for basic in range(len(list_2[icr_s])):
+        #             # list_2[icr_s].pop(basic)
+        #             poppop_2.append([icr_s, basic])
+        #             print("$$$$$$$$$$$$$$$$$$$$$$$")
+
+        # for delt in poppop_2:
+        #     list_2[delt[0]].pop(delt[1])
+
+        temp = list_1[rand]
+        list_1[rand] = list_2[rand]
+        list_2[rand] = temp
+
+        self.key_indus_dict[child_key_1] = list_1[0]
+        self.key_comm_dict[child_key_1] = list_1[1]
+        self.key_resi_dict[child_key_1] = list_1[2]
+        self.key_indus_dict[child_key_2] = list_2[0]
+        self.key_comm_dict[child_key_2] = list_2[1]
+        self.key_resi_dict[child_key_2] = list_2[2]
+
+        self.printCity(child_key_1)
+        self.printCity(child_key_2)
