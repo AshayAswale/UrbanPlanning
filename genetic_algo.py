@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 from copy import deepcopy
 import random
@@ -37,46 +38,59 @@ class GeneticAlgo():
     def solve(self):
         self.getXS()
         self.overwriteSceneLocation()
+        self.pupulate()
+        print("Sorted Points: ", self.points_key_map)
+        # self.crossover(self.points_key_map[0][1], self.points_key_map[1][1])
+        # self.printCity(self.points_key_map[0][1])
+        # self.printCity(self.points_key_map[1][1])
+        # print("Sorted Points: ", self.points_key_map)
+
+    def pupulate(self):
         for _ in range(len(self.points_key_map), self.max_population):
             unique_id = uuid.uuid4().hex[:8]
             for i in range(3):
                 self.fillLocations(unique_id, i)
             points = self.getPointsMap(unique_id)
+            self.points_key_map.append([points, unique_id])
             self.locations_s = deepcopy(self.locations_s_master)
             # self.printCity(unique_id)
         self.points_key_map.sort(reverse=True)
-        print("Sorted Points: ", self.points_key_map)
 
     def fillLocations(self, key, icr):
         loc_i = []
-        # no_of_loc = random.randint(0, self.max_locations[icr])
-        no_of_loc = self.max_locations[icr]
+        no_of_loc = random.randint(0, self.max_locations[icr])
+        # no_of_loc = self.max_locations[icr]
         for _ in range(no_of_loc):
-            self.getRowCol(loc_i, icr)
+            self.getRowCol(loc_i, key, icr)
             # self.getMyRowCol(loc_i, icr)
         icr_dict = self.getICR(icr)
         icr_dict[key] = loc_i
 
-    def getRowCol(self, loc_i, icr):
+    def getRowCol(self, loc_i, key, icr):
         row = random.randint(0, self.height-1)
-        col = random.randint(0, self.width-1)
+        col = random.randint(0, self.width - 1)
+        for i in range(3):
+            if key in self.getICR(i):
+                rest_loc = self.getICR(i)[key]
+                for locs in rest_loc:
+                    if locs[0] == row and locs[1] == col:
+                        self.getRowCol(loc_i, key, icr)
+                        return
+
         if (np.all(self.locations_x == [row, col], 1)).any():
-            self.getRowCol(loc_i, icr)
+            self.getRowCol(loc_i, key, icr)
             return
         elif len(loc_i) != 0:
-            if len(loc_i) == 1:
-                if loc_i[0][0] == row and loc_i[0][1] == col:
-                    self.getRowCol(loc_i, icr)
-                    return
-            else:
-                if(np.all(loc_i == [row, col], 1)).any():
-                    self.getRowCol(loc_i, icr)
+            for prev_loc in loc_i:
+                if prev_loc[0] == row and prev_loc[1] == col:
+                    self.getRowCol(loc_i, key, icr)
                     return
         elif (np.all(self.locations_s == [row, col], 1)).any():
             for i in range(len(self.locations_s)):
                 # Kuch to panga hai
                 if self.locations_s[i][0] == row and self.locations_s[i][1] == col:
                     self.locations_s = np.delete(self.locations_s, i, 0)
+                    break
         loc_i.append([row, col])
 
     def getMyRowCol(self, loc_i, icr):
@@ -96,7 +110,6 @@ class GeneticAlgo():
         for i in range(3):
             points -= self.getBuildCost(key, i)
             points += self.getNeighbourPoints(key, i)
-        self.points_key_map.append([points, key])
         return points
 
     def getBuildCost(self, key, icr):
@@ -123,10 +136,10 @@ class GeneticAlgo():
             self.urban_map[s[0], s[1]] = '1'
 
     def printCity(self, key):
-        print(self.urban_map)
-        print(self.key_indus_dict[key])
-        print(self.key_comm_dict[key])
-        print(self.key_resi_dict[key])
+        # print(self.urban_map)
+        # print(self.key_indus_dict[key])
+        # print(self.key_comm_dict[key])
+        # print(self.key_resi_dict[key])
         # print("\n\n")
 
         print_copy = deepcopy(self.urban_map)
@@ -141,7 +154,7 @@ class GeneticAlgo():
             print_copy[resi[0], resi[1]] = 'R'
 
         print(print_copy)
-        # print("\n\n")
+        print("\n")
 
     def getNeighbourPoints(self, key, icr):
         currentTile = self.getICR(icr)
@@ -242,3 +255,6 @@ class GeneticAlgo():
                 if manh_dist <= 2:
                     vicinity_count += 1
         return vicinity_count
+
+    # def crossover(self, key_1, key_2, new=False):
+        # SWAP ROWS... N0T INDIVIDUAL ELEMENTS
