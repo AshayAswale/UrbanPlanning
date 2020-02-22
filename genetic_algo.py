@@ -41,9 +41,12 @@ class GeneticAlgo():
         self.pupulate()
         print("Sorted Points: ", self.points_key_map)
         self.crossover(self.points_key_map[0][1], self.points_key_map[1][1])
+        self.points_key_map.sort(reverse=True)
+        print("Family Points: ", self.points_key_map)
+        self.deleteChild(self.points_key_map[0][1])
         # self.printCity(self.points_key_map[0][1])
         # self.printCity(self.points_key_map[1][1])
-        # print("Sorted Points: ", self.points_key_map)
+        print("Points after: ", self.points_key_map)
 
     def pupulate(self):
         for _ in range(len(self.points_key_map), self.max_population):
@@ -267,56 +270,61 @@ class GeneticAlgo():
     def crossover(self, key_1, key_2, new=False):
         list_1 = []
         list_2 = []
-        # count_1 = 0
-        # count_2 = 0
         for i in range(3):
             list_1.append(self.getICR(i)[key_1])
             list_2.append(self.getICR(i)[key_2])
-        #     count_1 += len(self.getICR(i)[key_1])
-        #     count_2 += len(self.getICR(i)[key_2])
-        # min_ct = int(min(count_1, count_2) / 2)
-        # min_ct = min_ct if min_ct > 0 else 1
 
         child_key_1 = uuid.uuid4().hex[:8]
         child_key_2 = uuid.uuid4().hex[:8]
 
-        # for _ in range(min_ct):
-        rand = random.randint(0, 2)
+        rand_icr = random.randint(0, 2)
 
-        # al = range(3)
-        # al.pop(rand)
-        # poppop_1 = []
-        # poppop_2 = []
-        # for coming in list_2[rand]:
-        #     for icr_s in al:
-        #         for basic in range(len(list_1[icr_s])):
-        #             # list_1[icr_s].pop(basic)
-        #             poppop_1.append([icr_s, basic])
-        #             print("#######################")
+        self.overlapDeletion(list_1, list_2, rand_icr)
 
-        # for delt in poppop_1:
-        #     list_1[delt[0]].pop(delt[1])
+        self.swapListElements(list_1, list_2, rand_icr)
 
-        # for coming in list_1[rand]:
-        #     for icr_s in al:
-        #         for basic in range(len(list_2[icr_s])):
-        #             # list_2[icr_s].pop(basic)
-        #             poppop_2.append([icr_s, basic])
-        #             print("$$$$$$$$$$$$$$$$$$$$$$$")
+        self.makeEntry(list_1, child_key_1)
+        self.makeEntry(list_2, child_key_2)
 
-        # for delt in poppop_2:
-        #     list_2[delt[0]].pop(delt[1])
+    def overlapDeletion(self, list_1, list_2, rand_icr):
+        self.overlapDeleteFix(list_1, list_2, rand_icr)
+        self.overlapDeleteFix(list_2, list_1, rand_icr)
 
-        temp = list_1[rand]
-        list_1[rand] = list_2[rand]
-        list_2[rand] = temp
+    def overlapDeleteFix(self, list_1, list_2, rand_icr):
+        poppop = []
+        al = [0, 1, 2]
+        al.pop(rand_icr)
 
-        self.key_indus_dict[child_key_1] = list_1[0]
-        self.key_comm_dict[child_key_1] = list_1[1]
-        self.key_resi_dict[child_key_1] = list_1[2]
-        self.key_indus_dict[child_key_2] = list_2[0]
-        self.key_comm_dict[child_key_2] = list_2[1]
-        self.key_resi_dict[child_key_2] = list_2[2]
+        for coming in list_2[rand_icr]:
+            for icr_s in al:
+                for basic in range(len(list_1[icr_s])):
+                    row_same = list_1[icr_s][basic][0] == coming[0]
+                    col_same = list_1[icr_s][basic][1] == coming[1]
+                    if row_same and col_same:
+                        poppop.append([icr_s, basic])
 
-        self.printCity(child_key_1)
-        self.printCity(child_key_2)
+        for delt in poppop:
+            list_1[delt[0]].pop(delt[1])
+
+    @staticmethod
+    def swapListElements(list_1, list_2, rand_icr):
+        temp = list_1[rand_icr]
+        list_1[rand_icr] = list_2[rand_icr]
+        list_2[rand_icr] = temp
+
+    def makeEntry(self, list_1, key):
+        self.key_indus_dict[key] = list_1[0]
+        self.key_comm_dict[key] = list_1[1]
+        self.key_resi_dict[key] = list_1[2]
+
+        points = self.getPointsMap(key)
+        self.points_key_map.append([points, key])
+
+    def deleteChild(self, key):
+        del self.key_indus_dict[key]
+        del self.key_comm_dict[key]
+        del self.key_resi_dict[key]
+        for i in range(len(self.points_key_map)):
+            if self.points_key_map[i][1] == key:
+                self.points_key_map.pop(i)
+                break
