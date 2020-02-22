@@ -40,7 +40,7 @@ class GeneticAlgo():
         self.overwriteSceneLocation()
         self.pupulate()
         print("Sorted Points: ", self.points_key_map)
-        # self.crossover(self.points_key_map[0][1], self.points_key_map[1][1])
+        self.crossover(self.points_key_map[0][1], self.points_key_map[1][1])
         # self.printCity(self.points_key_map[0][1])
         # self.printCity(self.points_key_map[1][1])
         # print("Sorted Points: ", self.points_key_map)
@@ -256,5 +256,18 @@ class GeneticAlgo():
                     vicinity_count += 1
         return vicinity_count
 
-    # def crossover(self, key_1, key_2, new=False):
-        # SWAP ROWS... N0T INDIVIDUAL ELEMENTS
+    def crossover(self, key_1, key_2, new=False):
+        list_1 = []
+        list_2 = []
+        for i in range(3):
+            for locs in self.getICR(i)[key_1]:
+                list_1.append([i, locs[0], locs[1]])
+            for locs in self.getICR(i)[key_2]:
+                list_2.append([i, locs[0], locs[1]])
+        min_ct = int(len(list_1)/2)
+        for _ in range(min_ct)
+            rand = random.randint(0,len(list_1))
+            temp_1 = list_1.pop(rand)
+            icr = temp[0]
+            for i in range(len(list_2))
+                
