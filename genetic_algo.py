@@ -3,6 +3,7 @@ import numpy as np
 from copy import deepcopy
 import random
 import uuid
+import time
 
 
 class GeneticAlgo():
@@ -21,9 +22,9 @@ class GeneticAlgo():
         self.locations_s = []
         self.locations_s_master = []
 
-        self.max_population = 2
-        self.elitism_percent = 10
-        self.culling_percent = 10
+        self.max_population = 10
+        self.elitism_percent = 5
+        self.culling_percent = 5
         self.mutation_percent = 10
 
     def getXS(self):
@@ -38,17 +39,21 @@ class GeneticAlgo():
     def solve(self):
         self.getXS()
         self.overwriteSceneLocation()
-        self.pupulate()
-        print("Sorted Points: ", self.points_key_map)
+        self.populate()
+        # self.startGenetics()
         self.crossover(self.points_key_map[0][1], self.points_key_map[1][1])
-        self.points_key_map.sort(reverse=True)
-        print("Family Points: ", self.points_key_map)
-        self.deleteChild(self.points_key_map[0][1])
-        # self.printCity(self.points_key_map[0][1])
-        # self.printCity(self.points_key_map[1][1])
-        print("Points after: ", self.points_key_map)
+        print("First Generation Best Points: ", self.points_key_map[0][0])
+        # self.culling(1)
+        self.startGenetics()
+        print("Solved Best Points: ", self.points_key_map[0][0])
+        self.printCity(self.points_key_map[0][1])
+        # self.printCity(bkp)
+        # self.points_key_map.sort(reverse=True)
+        # print("Family Points: ", self.points_key_map)
+        # self.deleteChild(self.points_key_map[0][1])
+        # print("Points after: ", self.points_key_map)
 
-    def pupulate(self):
+    def populate(self):
         for _ in range(len(self.points_key_map), self.max_population):
             count = 0
             unique_id = uuid.uuid4().hex[:8]
@@ -60,8 +65,7 @@ class GeneticAlgo():
                 self.getRowCol(loc_i, unique_id, random.randint(0, 2))
             points = self.getPointsMap(unique_id)
             self.points_key_map.append([points, unique_id])
-            # self.locations_s = deepcopy(self.locations_s_master)
-            self.printCity(unique_id)
+            # self.printCity(unique_id)
         self.points_key_map.sort(reverse=True)
 
     def fillLocations(self, key, icr):
@@ -180,7 +184,6 @@ class GeneticAlgo():
         elif icr == 1:
             points += self.getCcost(locations, key, icr)
         else:
-            # if icr == 1:
             points += self.getRcost(locations, key, icr)
         return points
 
@@ -267,7 +270,7 @@ class GeneticAlgo():
                     vicinity_count += 1
         return vicinity_count
 
-    def crossover(self, key_1, key_2, new=False):
+    def crossover(self, key_1, key_2):
         list_1 = []
         list_2 = []
         for i in range(3):
@@ -303,6 +306,7 @@ class GeneticAlgo():
                     if row_same and col_same:
                         poppop.append([icr_s, basic])
 
+        # Some Bug
         for delt in poppop:
             list_1[delt[0]].pop(delt[1])
 
@@ -320,11 +324,56 @@ class GeneticAlgo():
         points = self.getPointsMap(key)
         self.points_key_map.append([points, key])
 
-    def deleteChild(self, key):
+    def deleteChild(self, key, del_from_map=True):
         del self.key_indus_dict[key]
         del self.key_comm_dict[key]
         del self.key_resi_dict[key]
-        for i in range(len(self.points_key_map)):
-            if self.points_key_map[i][1] == key:
-                self.points_key_map.pop(i)
-                break
+
+        if del_from_map:
+            for i in range(len(self.points_key_map)):
+                if self.points_key_map[i][1] == key:
+                    self.points_key_map.pop(i)
+                    break
+
+    def culling(self, culling):
+        for _ in range(culling):
+            key = self.points_key_map[-1][1]
+            self.deleteChild(key, False)
+            del self.points_key_map[-1]
+
+    def getElites(self, elitism_keys, elitism):
+        elitism_keys = []
+        for i in range(elitism):
+            elitism_keys.append(self.points_key_map[i][1])
+
+    def getFraction(self, percent):
+        fraction = int(self.max_population * (percent / 100))
+        return fraction if fraction > 0 else 1
+
+    def replicateAndDelete(self, elitism):
+        mid = int((len(self.points_key_map) - elitism) / 2)
+        mid = elitism + mid
+        for i in range(elitism, mid, 2):
+            self.crossover(
+                self.points_key_map[i][1], self.points_key_map[i + 1][1])
+            self.deleteChild(self.points_key_map[i][1])
+            self.deleteChild(self.points_key_map[i + 1][1])
+
+    def startGenetics(self):
+        start_time = time.time()
+
+        elitism = self.getFraction(self.elitism_percent)
+        culling = self.getFraction(self.culling_percent)
+        mutation = self.getFraction(self.mutation_percent)
+        elitism_keys = []
+        count = 0
+        while time.time() - start_time < 10:
+            # while count < 10:
+            self.points_key_map.sort(reverse=True)
+            # print(self.points_key_map[0][0])
+            size = len(self.points_key_map)
+            self.getElites(elitism_keys, elitism)
+            self.culling(culling)
+            self.replicateAndDelete(elitism)
+            self.populate()
+            count += 1
