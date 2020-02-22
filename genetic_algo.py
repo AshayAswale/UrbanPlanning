@@ -20,7 +20,7 @@ class GeneticAlgo():
         self.locations_s = []
         self.locations_s_master = []
 
-        self.max_population = 1
+        self.max_population = 10
         self.elitism_percent = 10
         self.culling_percent = 10
         self.mutation_percent = 10
@@ -43,8 +43,9 @@ class GeneticAlgo():
                 self.fillLocations(unique_id, i)
             points = self.getPointsMap(unique_id)
             self.locations_s = deepcopy(self.locations_s_master)
-            self.printCity(unique_id)
-            print("total Points: ", self.points_key_map)
+            # self.printCity(unique_id)
+        self.points_key_map.sort(reverse=True)
+        print("Sorted Points: ", self.points_key_map)
 
     def fillLocations(self, key, icr):
         loc_i = []
@@ -52,6 +53,7 @@ class GeneticAlgo():
         no_of_loc = self.max_locations[icr]
         for _ in range(no_of_loc):
             self.getRowCol(loc_i, icr)
+            # self.getMyRowCol(loc_i, icr)
         icr_dict = self.getICR(icr)
         icr_dict[key] = loc_i
 
@@ -75,6 +77,18 @@ class GeneticAlgo():
                 # Kuch to panga hai
                 if self.locations_s[i][0] == row and self.locations_s[i][1] == col:
                     self.locations_s = np.delete(self.locations_s, i, 0)
+        loc_i.append([row, col])
+
+    def getMyRowCol(self, loc_i, icr):
+        if icr == 0:
+            row = 0
+            col = 3
+        elif icr == 1:
+            row = 2
+            col = 2
+        else:
+            row = 2
+            col = 1
         loc_i.append([row, col])
 
     def getPointsMap(self, key):
@@ -139,8 +153,11 @@ class GeneticAlgo():
 
         if icr == 0:
             points += self.getIcost(locations, key, icr)
-        # elif icr == 1:
-        #     ponts
+        elif icr == 1:
+            points += self.getCcost(locations, key, icr)
+        else:
+            # if icr == 1:
+            points += self.getRcost(locations, key, icr)
         return points
 
     def countXinVicinity(self, pos):
@@ -173,11 +190,41 @@ class GeneticAlgo():
         if len(pos) == 1:
             return 0
 
-        for i in range (len(pos)):
-            for j in range (i+1, len(pos)):
+        for i in range(len(pos)):
+            for j in range(i+1, len(pos)):
                 manh_dist = self.getManhDist(pos[i], pos[j])
                 if manh_dist <= 2:
-                    points += 4     # Each gets two, so doubling
+                    points += 2
+        return points
+
+    def getCcost(self, com_pos, key, icr):
+        points = 0
+        resi_pos = self.getICR(2)[key]
+
+        for i in range(len(com_pos)):
+            for j in range(len(resi_pos)):
+                manh_dist = self.getManhDist(com_pos[i], resi_pos[j])
+                if manh_dist <= 3:
+                    points += 8     # We are not adding while analyzing Residential. Hence adding double here
+
+        if len(com_pos) > 1:
+            for i in range(len(com_pos)):
+                for j in range(i+1, len(com_pos)):
+                    manh_dist = self.getManhDist(com_pos[i], com_pos[j])
+                    if manh_dist <= 2:
+                        points += -4
+        return points
+
+    def getRcost(self, resi_pos, key, icr):
+        points = 0
+        indus_pos = self.getICR(0)[key]
+
+        for i in range(len(indus_pos)):
+            for j in range(len(resi_pos)):
+                manh_dist = self.getManhDist(indus_pos[i], resi_pos[j])
+                if manh_dist <= 3:
+                    points += -5
+
         return points
 
     @staticmethod
