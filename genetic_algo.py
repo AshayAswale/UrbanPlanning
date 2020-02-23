@@ -333,7 +333,8 @@ class GeneticAlgo():
                     break
 
     def culling(self, culling):
-        for _ in range(culling):
+        desired_pop = self.max_population - culling
+        while (len(self.points_key_map)-desired_pop) > 0:
             key = self.points_key_map[-1][1]
             self.deleteChild(key, False)
             del self.points_key_map[-1]
@@ -350,6 +351,9 @@ class GeneticAlgo():
     def replicateAndDelete(self, elitism):
         mid = int((len(self.points_key_map) - elitism) / 2)
         mid = elitism + mid
+        for i in range(0, elitism):
+            self.crossover(
+                self.points_key_map[i][1], self.points_key_map[i + 1][1])
         for i in range(elitism, mid, 2):
 
             self.crossover(
@@ -374,7 +378,6 @@ class GeneticAlgo():
             self.getElites(elitism_keys, elitism)
             self.culling(culling)
             self.replicateAndDelete(elitism)
-            self.populate()
 
     def printResults(self):
         print("Solved Best Points: ", self.points_key_map[0][0])
