@@ -41,7 +41,6 @@ class GeneticAlgo():
         self.getXS()
         self.overwriteSceneLocation()
         self.populate()
-        self.crossover(self.points_key_map[0][1], self.points_key_map[1][1])
         print("First Generation Best Points: ", self.points_key_map[0][0])
         self.startGenetics()
         self.printResults()
@@ -374,12 +373,10 @@ class GeneticAlgo():
             if best_score != self.points_key_map[0][0]:
                 best_score = self.points_key_map[0][0]
                 self.time_achieved = time.time() - start_time
-
-            size = len(self.points_key_map)
             self.getElites(elitism_keys, elitism)
             self.culling(culling)
             self.replicateAndDelete(elitism)
-            self.mutate()
+            self.mutation()
 
     def printResults(self):
         print("Solved Best Points: ", self.points_key_map[0][0])
@@ -403,4 +400,4 @@ class GeneticAlgo():
         row_col = []
         icr = self.getICR(icr_rand)
         self.getRowCol(row_col, key, icr_rand)
-        icr[key][0] = row_col
+        icr[key][0] = row_col[0]
