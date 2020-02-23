@@ -22,10 +22,11 @@ class GeneticAlgo():
         self.locations_s = []
         self.locations_s_master = []
 
-        self.max_population = 10
-        self.elitism_percent = 5
+        self.max_population = 100
+        self.elitism_percent = 10
         self.culling_percent = 5
         self.mutation_percent = 10
+        self.time_achieved = 0.0
 
     def getXS(self):
         self.locations_x = np.where(self.urban_map == 'X')
@@ -40,18 +41,10 @@ class GeneticAlgo():
         self.getXS()
         self.overwriteSceneLocation()
         self.populate()
-        # self.startGenetics()
         self.crossover(self.points_key_map[0][1], self.points_key_map[1][1])
         print("First Generation Best Points: ", self.points_key_map[0][0])
-        # self.culling(1)
         self.startGenetics()
-        print("Solved Best Points: ", self.points_key_map[0][0])
-        self.printCity(self.points_key_map[0][1])
-        # self.printCity(bkp)
-        # self.points_key_map.sort(reverse=True)
-        # print("Family Points: ", self.points_key_map)
-        # self.deleteChild(self.points_key_map[0][1])
-        # print("Points after: ", self.points_key_map)
+        self.printResults()
 
     def populate(self):
         for _ in range(len(self.points_key_map), self.max_population):
@@ -299,16 +292,20 @@ class GeneticAlgo():
         al.pop(rand_icr)
 
         for coming in list_2[rand_icr]:
+            breakout = False
             for icr_s in al:
-                for basic in range(len(list_1[icr_s])):
-                    row_same = list_1[icr_s][basic][0] == coming[0]
-                    col_same = list_1[icr_s][basic][1] == coming[1]
+                for basic in list_1[icr_s]:
+                    row_same = basic[0] == coming[0]
+                    col_same = basic[1] == coming[1]
                     if row_same and col_same:
                         poppop.append([icr_s, basic])
+                        breakout = True
+                        break
+                if breakout:
+                    break
 
-        # Some Bug
         for delt in poppop:
-            list_1[delt[0]].pop(delt[1])
+            list_1[delt[0]].remove(delt[1])
 
     @staticmethod
     def swapListElements(list_1, list_2, rand_icr):
@@ -354,6 +351,7 @@ class GeneticAlgo():
         mid = int((len(self.points_key_map) - elitism) / 2)
         mid = elitism + mid
         for i in range(elitism, mid, 2):
+
             self.crossover(
                 self.points_key_map[i][1], self.points_key_map[i + 1][1])
             self.deleteChild(self.points_key_map[i][1])
@@ -364,16 +362,21 @@ class GeneticAlgo():
 
         elitism = self.getFraction(self.elitism_percent)
         culling = self.getFraction(self.culling_percent)
-        mutation = self.getFraction(self.mutation_percent)
         elitism_keys = []
-        count = 0
+        best_score = 0
         while time.time() - start_time < 10:
-            # while count < 10:
             self.points_key_map.sort(reverse=True)
-            # print(self.points_key_map[0][0])
+            if best_score != self.points_key_map[0][0]:
+                best_score = self.points_key_map[0][0]
+                self.time_achieved = time.time() - start_time
+
             size = len(self.points_key_map)
             self.getElites(elitism_keys, elitism)
             self.culling(culling)
             self.replicateAndDelete(elitism)
             self.populate()
-            count += 1
+
+    def printResults(self):
+        print("Solved Best Points: ", self.points_key_map[0][0])
+        print("Time at which best score was achieved: ", self.time_achieved)
+        self.printCity(self.points_key_map[0][1])
