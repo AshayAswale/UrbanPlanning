@@ -281,6 +281,7 @@ class GeneticAlgo():
 
         self.makeEntry(list_1, child_key_1)
         self.makeEntry(list_2, child_key_2)
+        return [child_key_1, child_key_2]
 
     def overlapDeletion(self, list_1, list_2, rand_icr):
         self.overlapDeleteFix(list_1, list_2, rand_icr)
@@ -378,8 +379,28 @@ class GeneticAlgo():
             self.getElites(elitism_keys, elitism)
             self.culling(culling)
             self.replicateAndDelete(elitism)
+            self.mutate()
 
     def printResults(self):
         print("Solved Best Points: ", self.points_key_map[0][0])
         print("Time at which best score was achieved: ", self.time_achieved)
         self.printCity(self.points_key_map[0][1])
+
+    def mutation(self):
+        curr_pop = len(self.points_key_map)
+        deficit = self.max_population - curr_pop
+        if deficit > 0:
+            for i in range(deficit):
+                child_keys = self.crossover(
+                    self.points_key_map[i][1], self.points_key_map[i + 1][1])
+                self.mutate(child_keys[0])
+                self.mutate(child_keys[1])
+                curr_pop = len(self.points_key_map)
+                deficit = self.max_population - curr_pop
+
+    def mutate(self, key):
+        icr_rand = random.randint(0, 2)
+        row_col = []
+        icr = self.getICR(icr_rand)
+        self.getRowCol(row_col, key, icr_rand)
+        icr[key][0] = row_col
