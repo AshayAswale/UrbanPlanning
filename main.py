@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import random
 from hill_climb import HillClimb
-# from genetic_algo import GeneticAlgo
+from genetic_algo import GeneticAlgo
 
 
 def getUrbanMap(argv):
