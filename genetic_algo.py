@@ -14,7 +14,12 @@ The ICR values are hardcoded as:
 
 Also when there is a variable named icr, that variable has the value of 
 which location is to be considered amongs these 3 values.
+
+--- NOTE TO SELF ---
+This should be enum
 """
+
+
 class GeneticAlgo():
 
     def __init__(self, max_locations, urban_map):
@@ -30,13 +35,13 @@ class GeneticAlgo():
         self.locations_x = []
         self.locations_s = []
         self.locations_s_master = []
+        self.graph_data = []
 
-        self.max_population = 100
-        self.elitism_percent = 10
-        self.culling_percent = 5
+        self.max_population = 250
+        self.elitism_percent = 1
+        self.culling_percent = 20
         self.mutation_percent = 10
         self.time_achieved = 0.0
-
 
     def solve(self):
         """
@@ -51,7 +56,7 @@ class GeneticAlgo():
         # Populate the map with the locations at random blocks
         self.populate()
         print("First Generation Best Points: ", self.points_key_map[0][0])
-        
+
         # Start the genetic algorithm code
         self.startGenetics()
 
@@ -180,7 +185,7 @@ class GeneticAlgo():
         for i in range(3):
             # Get the cost for building the site at the given locations
             points -= self.getBuildCost(key, i)
-            
+
             # Get the points scored due to the neighbouring criteria
             points += self.getNeighbourPoints(key, i)
         return points
@@ -293,7 +298,7 @@ class GeneticAlgo():
                 if manh_dist <= 3:
                     points += 8     # We are not adding while analyzing Residential. Hence adding double here
 
-        # Points deducted due to competition. 
+        # Points deducted due to competition.
         if len(com_pos) > 1:
             for i in range(len(com_pos)):
                 for j in range(i+1, len(com_pos)):
@@ -341,16 +346,37 @@ class GeneticAlgo():
         culling = self.getFraction(self.culling_percent)
         elitism_keys = []
         best_score = 0
-        while time.time() - start_time < 10:
+        time_stamps = [0, 0.1, 0.25, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        curr_time = time.time() - start_time
+        while curr_time < 10:
             self.points_key_map.sort(reverse=True)
             if best_score != self.points_key_map[0][0]:
                 best_score = self.points_key_map[0][0]
-                self.time_achieved = time.time() - start_time
+                self.time_achieved = curr_time
             self.getElites(elitism_keys, elitism)
             self.culling(culling)
             self.replicateAndDelete(elitism)
             self.mutation()
+            if curr_time > time_stamps[0]:
+                self.graph_data.append(best_score)
+                time_stamps.pop(0)
+            curr_time = time.time() - start_time
 
+    def replicateAndDelete(self, elitism):
+        """
+        Generate new child from existing parents, then delete the parents
+        """
+        mid = int((len(self.points_key_map) - elitism) / 2)
+        mid = elitism + mid
+        for i in range(0, elitism):
+            self.crossover(
+                self.points_key_map[i][1], self.points_key_map[i + 1][1])
+        for i in range(elitism, mid, 2):
+
+            self.crossover(
+                self.points_key_map[i][1], self.points_key_map[i + 1][1])
+            self.deleteChild(self.points_key_map[i][1])
+            self.deleteChild(self.points_key_map[i + 1][1])
 
     def crossover(self, key_1, key_2):
         """
@@ -470,22 +496,6 @@ class GeneticAlgo():
         fraction = int(self.max_population * (percent / 100))
         return fraction if fraction > 0 else 1
 
-    def replicateAndDelete(self, elitism):
-        """
-        Generate new child from existing parents, then delete the parents
-        """
-        mid = int((len(self.points_key_map) - elitism) / 2)
-        mid = elitism + mid
-        for i in range(0, elitism):
-            self.crossover(
-                self.points_key_map[i][1], self.points_key_map[i + 1][1])
-        for i in range(elitism, mid, 2):
-
-            self.crossover(
-                self.points_key_map[i][1], self.points_key_map[i + 1][1])
-            self.deleteChild(self.points_key_map[i][1])
-            self.deleteChild(self.points_key_map[i + 1][1])
-
     def mutation(self):
         """
         Performs the mutation
@@ -552,11 +562,11 @@ class GeneticAlgo():
         print(print_copy)
         print("\n")
 
-
     def printResults(self):
         """
         Prints the results as required by the assignment
         """
         print("Solved Best Points: ", self.points_key_map[0][0])
         print("Time at which best score was achieved: ", self.time_achieved)
+        # print("Scores at timestamps:", self.graph_data)
         self.printCity(self.points_key_map[0][1])
