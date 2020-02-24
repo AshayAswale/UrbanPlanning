@@ -1,7 +1,8 @@
 import sys
 import numpy as np
 import random
-from genetic_algo import GeneticAlgo
+from hill_climb import HillClimb
+# from genetic_algo import GeneticAlgo
 
 
 def getUrbanMap(argv):
@@ -46,7 +47,8 @@ def main(argv):
         gent.solve()
         pass
     elif argv[1] == "HC":
-        pass
+        hill=HillClimb(max_locations,urban_map)
+        hill.solve()
     else:
         print("Please enter \nGA: Genetic Algorithm \nHC: Hill Climb")
 
