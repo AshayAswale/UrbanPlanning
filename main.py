@@ -5,6 +5,9 @@ from genetic_algo import GeneticAlgo
 
 
 def getUrbanMap(argv):
+    """
+    Extracts the Urban Map from the input file
+    """
     urban_file = open(argv[0])
     text_from_file = urban_file.readlines()
     urban_map = []
@@ -18,6 +21,9 @@ def getUrbanMap(argv):
 
 
 def getMaxLocations(argv):
+    """
+    Extracts the maximum number of locations which can be used in the urban map
+    """
     urban_file = open(argv[0])
     text_from_file = urban_file.readlines()
     max_locations = []
